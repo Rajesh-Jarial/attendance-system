@@ -1,4 +1,4 @@
-const API = "PASTE_YOUR_WEB_APP_URL";
+const API = "https://script.google.com/macros/s/AKfycbyJncJhJA--wctFFrr56LsnWvF6bcjsjsQFPX-mThPlnwo2_nnXTlBe3j-leeT4MrxZPg/exec";
 
 function loadStudents(){
   fetch(API + "?action=students&branch=CSE&sem=3&group=A")
