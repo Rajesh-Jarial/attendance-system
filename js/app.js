@@ -1,0 +1,39 @@
+const API = "PASTE_YOUR_WEB_APP_URL";
+
+function loadStudents(){
+  fetch(API + "?action=students&branch=CSE&sem=3&group=A")
+    .then(r=>r.json())
+    .then(data=>{
+      let t = "<tr><th>Roll</th><th>Name</th><th>P</th></tr>";
+      data.forEach(s=>{
+        t += `<tr>
+          <td>${s.roll}</td>
+          <td>${s.name}</td>
+          <td><input type="checkbox" data-roll="${s.roll}"></td>
+        </tr>`;
+      });
+      table.innerHTML = t;
+    });
+}
+
+function submitAttendance(){
+  let rows = [];
+  document.querySelectorAll("input[type=checkbox]").forEach(c=>{
+    rows.push({
+      roll: c.dataset.roll,
+      name: c.parentElement.previousElementSibling.innerText,
+      subject: "CSE302P",
+      type: "Practical",
+      group: "A",
+      date: date.value,
+      status: c.checked ? "P" : "A"
+    });
+  });
+
+  fetch(API, {
+    method:"POST",
+    body:JSON.stringify(rows)
+  }).then(()=>alert("Attendance Saved"));
+}
+
+loadStudents();
