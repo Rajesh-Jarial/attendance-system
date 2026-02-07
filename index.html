@@ -1,18 +1,15 @@
 <!DOCTYPE html>
 <html>
-<head><title>Polytechnic Login</title></head>
 <body>
 <h3>Teacher Login</h3>
-<input id="u" placeholder="Username">
-<input id="p" type="password" placeholder="Password">
+<input id="u" placeholder="Username"><br><br>
+<input id="p" type="password" placeholder="Password"><br><br>
 <button onclick="login()">Login</button>
 
 <script>
 function login(){
-  if(u.value && p.value){
-    localStorage.setItem("login","yes");
-    location.href="attendance.html";
-  }
+  localStorage.setItem("login","yes");
+  location.href="attendance.html";
 }
 </script>
 </body>
