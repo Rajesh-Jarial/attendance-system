@@ -41,37 +41,75 @@ function loadStudents() {
 
 
 function submitAttendance() {
-  const branch = branch.value;
-  const sem = sem.value;
-  const group = group.value;
-  const dateVal = date.value;
+  const subjSel = subject.options[subject.selectedIndex];
 
-  if (!dateVal) {
-    alert("Please select date");
+  if (!subject.value || !date.value) {
+    alert("Please select Subject and Date");
     return;
   }
 
   let rows = [];
 
-  document
-    .querySelectorAll("input[type=checkbox]")
-    .forEach(cb => {
-      rows.push({
-        roll: cb.dataset.roll,
-        name: cb.dataset.name,
-        subject: subject.value,      // from subject dropdown
-        type: group === "NA" ? "Theory" : "Practical",
-        group: group,
-        date: dateVal,
-        status: cb.checked ? "P" : "A"
-      });
+  document.querySelectorAll("input[type=checkbox]").forEach(cb => {
+    rows.push({
+      roll: cb.dataset.roll,
+      name: cb.dataset.name,
+      subject: subject.value,
+      type: subjSel.dataset.type,
+      group: group.value,
+      date: date.value,
+      status: cb.checked ? "P" : "A"
     });
+  });
 
   fetch(API, {
     method: "POST",
     body: JSON.stringify(rows)
   }).then(() => alert("Attendance Saved Successfully"));
 }
+
+
+function loadSubjects() {
+  const branch = document.getElementById("branch").value;
+  const sem = document.getElementById("sem").value;
+
+  if (!branch || !sem) {
+    alert("Please select Branch and Semester");
+    return;
+  }
+
+  fetch(API + `?action=subjects&branch=${branch}&sem=${sem}`)
+    .then(res => res.json())
+    .then(data => {
+      const subj = document.getElementById("subject");
+      subj.innerHTML = '<option value="">-- Select Subject --</option>';
+
+      data.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s.code;
+        opt.textContent = `${s.code} - ${s.name}`;
+        opt.dataset.type = s.type;     // Theory / Practical
+        opt.dataset.groups = s.groups; // NA or A,B
+        subj.appendChild(opt);
+      });
+    });
+}
+
+function onSubjectChange() {
+  const subj = document.getElementById("subject");
+  const grp = document.getElementById("group");
+  const selected = subj.options[subj.selectedIndex];
+
+  if (!selected.dataset.type) return;
+
+  if (selected.dataset.type === "Theory") {
+    grp.value = "NA";
+    grp.disabled = true;
+  } else {
+    grp.disabled = false;
+  }
+}
+
 
 
 loadStudents();
