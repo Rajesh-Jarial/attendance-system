@@ -1,115 +1,71 @@
 const API = "https://script.google.com/macros/s/AKfycbyESbLPdBKMLVCjVmb-KOzrue-FjFXB9EvBZ5z8KRJkcpTAYzoRCp0jEPo9DV39JWy8sg/exec";
 
-function loadStudents() {
-  const branch = document.getElementById("branch").value;
-  const sem = document.getElementById("sem").value;
-  const group = document.getElementById("group").value;
+let students = [];
 
-  if (!branch || !sem) {
-    alert("Please select Branch and Semester");
-    return;
-  }
-
-  const url = API +
-    "?action=students" +
-    "&branch=" + encodeURIComponent(branch) +
-    "&sem=" + encodeURIComponent(sem) +
-    "&group=" + encodeURIComponent(group);
-
-  fetch(url)
+function loadSubjects() {
+  fetch(`${API}?action=subjects&branch=${branch.value}&sem=${sem.value}`)
     .then(res => res.json())
     .then(data => {
-      let html =
-        "<tr><th>Roll No</th><th>Name</th><th>Present</th></tr>";
-
+      subject.innerHTML = '<option value="">-- Select Subject --</option>';
       data.forEach(s => {
-        html += `
-          <tr>
-            <td>${s.roll}</td>
-            <td>${s.name}</td>
-            <td>
-              <input type="checkbox"
-                     data-roll="${s.roll}"
-                     data-name="${s.name}">
-            </td>
-          </tr>`;
+        let opt = document.createElement("option");
+        opt.value = s.code;
+        opt.textContent = s.code + " - " + s.name;
+        opt.dataset.type = s.type;
+        opt.dataset.groups = s.groups;
+        subject.appendChild(opt);
       });
-
-      document.getElementById("table").innerHTML = html;
     });
 }
 
+function loadStudents() {
+  fetch(`${API}?action=students&branch=${branch.value}&sem=${sem.value}&group=${group.value}`)
+    .then(res => res.json())
+    .then(data => {
+      students = data;
+      const tb = document.getElementById("studentTableBody");
+      tb.innerHTML = "";
+
+      data.forEach((s, i) => {
+        tb.innerHTML += `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${s.roll}</td>
+          <td>${s.name}</td>
+          <td><input type="checkbox" checked></td>
+        </tr>`;
+      });
+    });
+}
+
+function selectAll(state) {
+  document.querySelectorAll("#studentTableBody input")
+    .forEach(cb => cb.checked = state);
+}
 
 function submitAttendance() {
-  const subjSel = subject.options[subject.selectedIndex];
+  const date = new Date().toISOString().split("T")[0];
+  let payload = [];
 
-  if (!subject.value || !date.value) {
-    alert("Please select Subject and Date");
-    return;
-  }
-
-  let rows = [];
-
-  document.querySelectorAll("input[type=checkbox]").forEach(cb => {
-    rows.push({
-      roll: cb.dataset.roll,
-      name: cb.dataset.name,
+  document.querySelectorAll("#studentTableBody tr").forEach((row, i) => {
+    payload.push({
+      date,
+      branch: branch.value,
+      sem: sem.value,
       subject: subject.value,
-      type: subjSel.dataset.type,
       group: group.value,
-      date: date.value,
-      status: cb.checked ? "P" : "A"
+      roll: students[i].roll,
+      status: row.querySelector("input").checked ? "P" : "A"
     });
   });
 
   fetch(API, {
     method: "POST",
-    body: JSON.stringify(rows)
-  }).then(() => alert("Attendance Saved Successfully"));
+    body: JSON.stringify(payload)
+  })
+  .then(() => {
+    alert("Attendance Saved Successfully");
+    document.querySelectorAll("input, button, select")
+      .forEach(el => el.disabled = true);
+  });
 }
-
-
-function loadSubjects() {
-  const branch = document.getElementById("branch").value;
-  const sem = document.getElementById("sem").value;
-
-  if (!branch || !sem) {
-    alert("Please select Branch and Semester");
-    return;
-  }
-
-  fetch(API + `?action=subjects&branch=${branch}&sem=${sem}`)
-    .then(res => res.json())
-    .then(data => {
-      const subj = document.getElementById("subject");
-      subj.innerHTML = '<option value="">-- Select Subject --</option>';
-
-      data.forEach(s => {
-        const opt = document.createElement("option");
-        opt.value = s.code;
-        opt.textContent = `${s.code} - ${s.name}`;
-        opt.dataset.type = s.type;     // Theory / Practical
-        opt.dataset.groups = s.groups; // NA or A,B
-        subj.appendChild(opt);
-      });
-    });
-}
-
-function onSubjectChange() {
-  const subj = document.getElementById("subject");
-  const grp = document.getElementById("group");
-  const selected = subj.options[subj.selectedIndex];
-
-  if (!selected.dataset.type) return;
-
-  if (selected.dataset.type === "Theory") {
-    grp.value = "NA";
-    grp.disabled = true;
-  } else {
-    grp.disabled = false;
-  }
-}
-
-
-
-loadStudents();
