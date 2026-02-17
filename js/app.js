@@ -1,71 +1,103 @@
-const API = "https://script.google.com/macros/s/AKfycbyESbLPdBKMLVCjVmb-KOzrue-FjFXB9EvBZ5z8KRJkcpTAYzoRCp0jEPo9DV39JWy8sg/exec";
+const API = "https://script.google.com/macros/s/AKfycbxg9dPyfSPt1vo37ohI_Xn-CMVcEd2n8TTbTfEctKk4aEFdD6h3DRuActmYHEYuF9IRJA/exec";
 
-let students = [];
 
-function loadSubjects() {
-  fetch(`${API}?action=subjects&branch=${branch.value}&sem=${sem.value}`)
-    .then(res => res.json())
-    .then(data => {
-      subject.innerHTML = '<option value="">-- Select Subject --</option>';
-      data.forEach(s => {
-        let opt = document.createElement("option");
-        opt.value = s.code;
-        opt.textContent = s.code + " - " + s.name;
-        opt.dataset.type = s.type;
-        opt.dataset.groups = s.groups;
-        subject.appendChild(opt);
-      });
-    });
+let subjectData=[];
+let reportData={};
+
+function login(){
+ fetch(`${API}?action=login&u=${u.value}&p=${p.value}`)
+ .then(r=>r.json())
+ .then(d=>{
+   if(d.status=="success") location="attendance.html";
+   else alert("Invalid Login");
+ });
 }
 
-function loadStudents() {
-  fetch(`${API}?action=students&branch=${branch.value}&sem=${sem.value}&group=${group.value}`)
-    .then(res => res.json())
-    .then(data => {
-      students = data;
-      const tb = document.getElementById("studentTableBody");
-      tb.innerHTML = "";
-
-      data.forEach((s, i) => {
-        tb.innerHTML += `
-        <tr>
-          <td>${i + 1}</td>
-          <td>${s.roll}</td>
-          <td>${s.name}</td>
-          <td><input type="checkbox" checked></td>
-        </tr>`;
-      });
-    });
+function loadSubjects(){
+ fetch(`${API}?action=subjects&branch=${branch.value}&sem=${sem.value}`)
+ .then(r=>r.json())
+ .then(data=>{
+   subjectData=data;
+   let h="";
+   data.forEach((s,i)=>{
+     h+=`<option value="${i}">${s.code} - ${s.name}</option>`;
+   });
+   subject.innerHTML=h;
+   updateGroupOptions();
+ });
 }
 
-function selectAll(state) {
-  document.querySelectorAll("#studentTableBody input")
-    .forEach(cb => cb.checked = state);
+function updateGroupOptions(){
+ const s=subjectData[subject.value];
+ group.innerHTML="";
+ if(s.type=="Theory"){
+   group.disabled=true;
+   group.innerHTML="<option value=''>NA</option>";
+ }else{
+   group.disabled=false;
+   group.innerHTML="<option value=''>Select Group</option>";
+   s.groups.split(",").forEach(g=>{
+     group.innerHTML+=`<option value="${g.trim()}">${g.trim()}</option>`;
+   });
+ }
 }
 
-function submitAttendance() {
-  const date = new Date().toISOString().split("T")[0];
-  let payload = [];
+function loadStudents(){
+ const s=subjectData[subject.value];
+ if(s.type=="Practical" && group.value==""){
+   alert("Select Group");
+   return;
+ }
 
-  document.querySelectorAll("#studentTableBody tr").forEach((row, i) => {
-    payload.push({
-      date,
-      branch: branch.value,
-      sem: sem.value,
-      subject: subject.value,
-      group: group.value,
-      roll: students[i].roll,
-      status: row.querySelector("input").checked ? "P" : "A"
-    });
-  });
-
-  fetch(API, {
-    method: "POST",
-    body: JSON.stringify(payload)
-  })
-  .then(() => {
-    alert("Attendance Saved Successfully");
-    document.querySelectorAll("input, button, select")
-      .forEach(el => el.disabled = true);
-  });
+ fetch(`${API}?action=students&branch=${branch.value}&sem=${sem.value}&group=${group.value}`)
+ .then(r=>r.json())
+ .then(data=>{
+   let h="<tr><th>#</th><th>Roll</th><th>Name</th><th>Present</th></tr>";
+   data.forEach((st,i)=>{
+     h+=`<tr>
+     <td>${i+1}</td>
+     <td>${st.roll}</td>
+     <td>${st.name}</td>
+     <td><input type="checkbox" checked id="c${st.roll}"></td>
+     </tr>`;
+   });
+   tbl.innerHTML=h;
+ });
 }
+
+function submitAttendance(){
+ document.querySelectorAll("input[type=checkbox]").forEach(cb=>{
+   fetch(`${API}?action=save&date=${date.value}&branch=${branch.value}&sem=${sem.value}&subject=${subjectData[subject.value].code}&group=${group.value}&roll=${cb.id.slice(1)}&status=${cb.checked?"Present":"Absent"}`);
+ });
+ submitBtn.disabled=true;
+ alert("Saved");
+}
+
+function resetForm(){
+ submitBtn.disabled=false;
+ tbl.innerHTML="";
+}
+
+function generateReport(){
+ fetch(`${API}?action=report&month=${month.value}&subject=${repSubject.value}`)
+ .then(r=>r.json())
+ .then(data=>{
+   reportData=data;
+   let h="<table border=1><tr><th>Roll</th><th>%</th></tr>";
+   for(let roll in data){
+     let per=(data[roll].present/data[roll].total*100).toFixed(2);
+     h+=`<tr><td>${roll}</td><td>${per}%</td></tr>`;
+   }
+   h+="</table>";
+   reportDiv.innerHTML=h;
+ });
+}
+
+function downloadPDF(){
+ const {jsPDF}=window.jspdf;
+ const doc=new jsPDF();
+ doc.text("Attendance Report",20,20);
+ doc.text(reportDiv.innerText,20,30);
+ doc.save("attendance.pdf");
+}
+
