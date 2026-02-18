@@ -118,17 +118,21 @@ function downloadPDF(){
   doc.save("Attendance_Report.pdf");
 }
 
-
 /* ===== REPORT PAGE INITIALIZATION ===== */
 
 document.addEventListener("DOMContentLoaded", function(){
 
-  if(document.getElementById("repYear")){
+  const yearSelect = document.getElementById("repYear");
 
-    let y = new Date().getFullYear();
+  if(yearSelect){
 
-    for(let i = y - 2; i <= y + 1; i++){
-      repYear.innerHTML += `<option value="${i}">${i}</option>`;
+    const currentYear = new Date().getFullYear();
+
+    for(let i = currentYear - 2; i <= currentYear + 1; i++){
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = i;
+      yearSelect.appendChild(opt);
     }
 
   }
@@ -137,21 +141,35 @@ document.addEventListener("DOMContentLoaded", function(){
 
 function loadReportSubjects(){
 
-  if(!repBranch.value || !repSem.value){
-    alert("Select Branch and Semester");
-    return;
+  const branch = document.getElementById("repBranch").value;
+  const sem = document.getElementById("repSem").value;
+  const subjectSelect = document.getElementById("repSubject");
+
+  if(!branch || !sem){
+    return;  // Do nothing if empty
   }
 
-  fetch(`${API}?action=subjects&branch=${repBranch.value}&sem=${repSem.value}`)
-  .then(r=>r.json())
-  .then(data=>{
-    let h="<option value=''>Select Subject</option>";
-    data.forEach(s=>{
-      h+=`<option value="${s.code}">${s.code} - ${s.name}</option>`;
+  fetch(`${API}?action=subjects&branch=${branch}&sem=${sem}`)
+  .then(res => res.json())
+  .then(data => {
+
+    subjectSelect.innerHTML = "<option value=''>Select Subject</option>";
+
+    data.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s.code;
+      opt.textContent = s.code + " - " + s.name;
+      subjectSelect.appendChild(opt);
     });
-    repSubject.innerHTML=h;
+
+  })
+  .catch(err => {
+    console.log("Subject Load Error:", err);
   });
+
 }
+
+
 
 
 function generateReport(){
