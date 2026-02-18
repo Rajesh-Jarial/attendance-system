@@ -169,48 +169,56 @@ function loadReportSubjects(){
 
 }
 
-
-
-
 function generateReport(){
 
-  if(!repMonth.value || !repYear.value || !repSubject.value){
-    alert("Fill all fields");
+  const branch = document.getElementById("repBranch").value;
+  const sem = document.getElementById("repSem").value;
+  const subject = document.getElementById("repSubject").value;
+  const month = document.getElementById("repMonth").value;
+  const year = document.getElementById("repYear").value;
+
+  if(!branch || !sem || !subject || !month || !year){
+    alert("Please fill all fields.");
     return;
   }
 
-  fetch(`${API}?action=report
-  &month=${repMonth.value}
-  &year=${repYear.value}
-  &branch=${repBranch.value}
-  &sem=${repSem.value}
-  &subject=${repSubject.value}`)
-  .then(r=>r.json())
-  .then(data=>{
+  fetch(`${API}?action=report&branch=${branch}&sem=${sem}&subject=${subject}&month=${month}&year=${year}`)
+  .then(res => res.json())
+  .then(data => {
 
-    reportData=data;
-
-    let h="<table border=1>";
-    h+="<tr><th>Roll</th><th>Present</th><th>Total</th><th>%</th></tr>";
-
-    for(let roll in data){
-
-      let p=data[roll].present;
-      let t=data[roll].total;
-      let per=((p/t)*100).toFixed(2);
-
-      h+=`<tr>
-      <td>${roll}</td>
-      <td>${p}</td>
-      <td>${t}</td>
-      <td>${per}%</td>
-      </tr>`;
+    if(data.length === 0){
+      alert("No records found.");
+      return;
     }
 
-    h+="</table>";
+    let output = "<h3>Attendance Report</h3>";
+    output += "<table border='1' cellpadding='5'>";
+    output += "<tr><th>Roll No</th><th>Name</th><th>Total Classes</th><th>Present</th><th>%</th></tr>";
 
-    reportDiv.innerHTML=h;
+    data.forEach(r => {
+      output += `<tr>
+                  <td>${r.roll}</td>
+                  <td>${r.name}</td>
+                  <td>${r.total}</td>
+                  <td>${r.present}</td>
+                  <td>${r.percentage}%</td>
+                </tr>`;
+    });
+
+    output += "</table>";
+
+    document.getElementById("reportResult").innerHTML = output;
+
+  })
+  .catch(err => {
+    console.log("Report Error:", err);
+    alert("Error generating report.");
   });
+
 }
+
+
+
+
 
 
