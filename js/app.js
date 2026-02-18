@@ -78,26 +78,121 @@ function resetForm(){
  tbl.innerHTML="";
 }
 
-function generateReport(){
- fetch(`${API}?action=report&month=${month.value}&subject=${repSubject.value}`)
- .then(r=>r.json())
- .then(data=>{
-   reportData=data;
-   let h="<table border=1><tr><th>Roll</th><th>%</th></tr>";
-   for(let roll in data){
-     let per=(data[roll].present/data[roll].total*100).toFixed(2);
-     h+=`<tr><td>${roll}</td><td>${per}%</td></tr>`;
-   }
-   h+="</table>";
-   reportDiv.innerHTML=h;
- });
+function downloadPDF(){
+
+  if(Object.keys(reportData).length===0){
+    alert("Generate report first");
+    return;
+  }
+
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFontSize(14);
+  doc.text("Attendance Report",20,20);
+
+  doc.setFontSize(11);
+  doc.text(`Branch: ${repBranch.value}`,20,30);
+  doc.text(`Semester: ${repSem.value}`,20,37);
+  doc.text(`Month: ${repMonth.options[repMonth.selectedIndex].text}`,20,44);
+  doc.text(`Year: ${repYear.value}`,20,51);
+  doc.text(`Subject: ${repSubject.value}`,20,58);
+
+  let y=70;
+
+  for(let roll in reportData){
+
+    let p=reportData[roll].present;
+    let t=reportData[roll].total;
+    let per=((p/t)*100).toFixed(2)+"%";
+
+    doc.text(`Roll: ${roll}  |  ${per}`,20,y);
+    y+=8;
+
+    if(y>280){
+      doc.addPage();
+      y=20;
+    }
+  }
+
+  doc.save("Attendance_Report.pdf");
 }
 
-function downloadPDF(){
- const {jsPDF}=window.jspdf;
- const doc=new jsPDF();
- doc.text("Attendance Report",20,20);
- doc.text(reportDiv.innerText,20,30);
- doc.save("attendance.pdf");
+
+/* ===== REPORT PAGE INITIALIZATION ===== */
+
+document.addEventListener("DOMContentLoaded", function(){
+
+  if(document.getElementById("repYear")){
+
+    let y = new Date().getFullYear();
+
+    for(let i = y - 2; i <= y + 1; i++){
+      repYear.innerHTML += `<option value="${i}">${i}</option>`;
+    }
+
+  }
+
+});
+
+function loadReportSubjects(){
+
+  if(!repBranch.value || !repSem.value){
+    alert("Select Branch and Semester");
+    return;
+  }
+
+  fetch(`${API}?action=subjects&branch=${repBranch.value}&sem=${repSem.value}`)
+  .then(r=>r.json())
+  .then(data=>{
+    let h="<option value=''>Select Subject</option>";
+    data.forEach(s=>{
+      h+=`<option value="${s.code}">${s.code} - ${s.name}</option>`;
+    });
+    repSubject.innerHTML=h;
+  });
 }
+
+
+function generateReport(){
+
+  if(!repMonth.value || !repYear.value || !repSubject.value){
+    alert("Fill all fields");
+    return;
+  }
+
+  fetch(`${API}?action=report
+  &month=${repMonth.value}
+  &year=${repYear.value}
+  &branch=${repBranch.value}
+  &sem=${repSem.value}
+  &subject=${repSubject.value}`)
+  .then(r=>r.json())
+  .then(data=>{
+
+    reportData=data;
+
+    let h="<table border=1>";
+    h+="<tr><th>Roll</th><th>Present</th><th>Total</th><th>%</th></tr>";
+
+    for(let roll in data){
+
+      let p=data[roll].present;
+      let t=data[roll].total;
+      let per=((p/t)*100).toFixed(2);
+
+      h+=`<tr>
+      <td>${roll}</td>
+      <td>${p}</td>
+      <td>${t}</td>
+      <td>${per}%</td>
+      </tr>`;
+    }
+
+    h+="</table>";
+
+    reportDiv.innerHTML=h;
+  });
+}
+
 
