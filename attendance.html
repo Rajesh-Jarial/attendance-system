@@ -10,8 +10,22 @@
 
 Date: <input type="date" id="date"><br><br>
 
-Branch: <input id="branch"><br>
-Sem: <input id="sem"><br><br>
+Branch:
+<select id="branch">
+  <option value="">--Select Branch--</option>
+  <option value="Computer Engineering">Computer Engineering</option>
+  <option value="Mechanical Engineering">Mechanical Engineering</option>
+  <option value="Electrical Engineering">Electrical Engineering</option>
+  <option value="Civil Engineering">Civil Engineering</option>
+</select>
+
+Semester:
+<select id="sem">
+  <option value="">--Select--</option>
+  <option value="1">1</option><option value="2">2</option>
+  <option value="3">3</option><option value="4">4</option>
+  <option value="5">5</option><option value="6">6</option>
+</select>
 
 Subject:
 <select id="subject" onchange="updateGroupOptions()"></select>
