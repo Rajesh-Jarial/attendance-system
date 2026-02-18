@@ -10,17 +10,17 @@
 <h3>Attendance Report</h3>
 
 Branch:
-<input id="repBranch"><br><br>
+<input type="text" id="repBranch"><br><br>
 
 Semester:
-<select id="repSem">
-<option value="">Select</option>
-<option>1</option>
-<option>2</option>
-<option>3</option>
-<option>4</option>
-<option>5</option>
-<option>6</option>
+<select id="repSem" onchange="loadReportSubjects()">
+<option value="">Select Semester</option>
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="3">3</option>
+<option value="4">4</option>
+<option value="5">5</option>
+<option value="6">6</option>
 </select><br><br>
 
 Month:
@@ -44,7 +44,9 @@ Year:
 <select id="repYear"></select><br><br>
 
 Subject:
-<select id="repSubject"></select><br><br>
+<select id="repSubject">
+<option value="">Select Subject</option>
+</select><br><br>
 
 <button onclick="loadReportSubjects()">Load Subjects</button>
 <button onclick="generateReport()">Generate Report</button>
