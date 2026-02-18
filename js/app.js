@@ -183,15 +183,8 @@ function generateReport(){
   }
 
   fetch(`${API}?action=report&branch=${branch}&sem=${sem}&subject=${subject}&month=${month}&year=${year}`)
- // .then(res => res.json())
- // .then(data => {
-
- .then(res => res.text())
-.then(data => {
-    console.log("RAW RESPONSE:", data);
-    alert("Check Console");
-});
-
+  .then(res => res.json())
+  .then(data => {
 
     if(data.length === 0){
       alert("No records found.");
